@@ -6,6 +6,12 @@ public class InteractionSystem : MonoBehaviour
     private IInteractable currentInteractable;
     private bool isInteracting = false;
 
+    void Start()
+    {
+                //Application.targetFrameRate = 30;
+
+    }
+
     void Update()
     {
         if (currentInteractable != null && Input.GetKeyDown(interactKey))

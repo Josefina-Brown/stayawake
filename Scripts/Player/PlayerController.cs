@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
+
 
 [RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
@@ -30,11 +32,26 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+
+        if (Input.GetKeyDown(KeyCode.V))
+        {
+            RestartScene();
+        }
+
         if (isFrozen)
         {
-
             return; // Evita cualquier entrada o movimiento
         }
+
+        // Cámara
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
+
+        verticalRotation -= mouseY;
+        verticalRotation = Mathf.Clamp(verticalRotation, -90f, 90f);
+
+        cameraTransform.localRotation = Quaternion.Euler(verticalRotation, 0f, 0f);
+        transform.Rotate(Vector3.up * mouseX);
 
         // Movimiento
         float moveX = Input.GetAxis("Horizontal");
@@ -48,25 +65,15 @@ public class PlayerController : MonoBehaviour
             yVelocity = -2f;
         }
 
-        // if (Input.GetButtonDown("Jump") && controller.isGrounded)
-        // {
-        //     yVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
-        // }
+        if (Input.GetButtonDown("Jump") && controller.isGrounded)
+        {
+            yVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        }
 
         yVelocity += gravity * Time.deltaTime;
         move.y = yVelocity;
 
         controller.Move(move * moveSpeed * Time.deltaTime);
-
-        // Cámara
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
-
-        verticalRotation -= mouseY;
-        verticalRotation = Mathf.Clamp(verticalRotation, -90f, 90f);
-
-        cameraTransform.localRotation = Quaternion.Euler(verticalRotation, 0f, 0f);
-        transform.Rotate(Vector3.up * mouseX);
 
         ApplyHeadBob(moveX, moveZ);
     }
@@ -87,13 +94,22 @@ public class PlayerController : MonoBehaviour
     }
 
     // ✅ Congela al jugador
-    public void FreezePlayer()
+    // Congela al jugador y orienta la cámara hacia un punto dado
+    public void FreezePlayer(Transform lookPosition = null)
     {
         isFrozen = true;
         yVelocity = 0f;
         controller.enabled = false;
-        Cursor.lockState = CursorLockMode.None; // opcional: desbloquea el cursor
+        Cursor.lockState = CursorLockMode.None;
+
+        if (lookPosition != null)
+        {
+            // Mover la cámara a la posición de la máquina
+            this.transform.position = lookPosition.position;
+            cameraTransform.rotation = lookPosition.rotation;
+        }
     }
+
 
     // ✅ Lo descongela
     public void UnfreezePlayer()
@@ -101,6 +117,12 @@ public class PlayerController : MonoBehaviour
         isFrozen = false;
         controller.enabled = true;
         Cursor.lockState = CursorLockMode.Locked; // opcional: vuelve a bloquear el cursor
+    }
+
+    void RestartScene()
+    {
+        Scene currentScene = SceneManager.GetActiveScene();
+        SceneManager.LoadScene(currentScene.name);
     }
 
 

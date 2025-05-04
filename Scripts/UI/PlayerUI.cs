@@ -6,6 +6,7 @@ public class PlayerUI : MonoBehaviour
 {
     public Slider energyBar;
     public TMP_Text moneyText;
+    public TMP_Text ticketsText;
 
     private PlayerEnergy playerEnergy;
     private TicketManager playerWallet;
@@ -33,7 +34,8 @@ public class PlayerUI : MonoBehaviour
 
         if (playerWallet != null)
         {
-            moneyText.text = "◘ " + playerWallet.currentTickets.ToString("F0");
+            moneyText.text = "◘ " + playerWallet.currentCoins.ToString("F0");
+            ticketsText.text = "◘ " + playerWallet.currentTickets.ToString("F0");
         }
     }
 }

@@ -34,9 +34,11 @@ public class PlayerEnergy : MonoBehaviour
         OnEnergyChanged?.Invoke(currentEnergy, maxEnergy);
     }
 
+public GameObject loseScreen;
     private void FallAsleep()
     {
-        Debug.Log("Te estás quedando dormido...");
+        loseScreen.SetActive(true);
+        //Debug.Log("Te estás quedando dormido...");
         // Acá luego activaremos al SleepHunter
     }
 }

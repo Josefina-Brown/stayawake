@@ -22,7 +22,7 @@ public class VendingUI : MonoBehaviour
 
         for (int i = 0; i < machine.items.Length; i++)
         {
-            int index = i; // evitar problemas con el closure
+            int index = i; 
             VendingItem item = machine.items[i];
 
             Button btn = Instantiate(itemButtonPrefab, itemButtonContainer);
