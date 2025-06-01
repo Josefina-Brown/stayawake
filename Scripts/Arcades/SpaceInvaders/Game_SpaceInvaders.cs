@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
-
+using TMPro;
 public class Game_SpaceInvaders : MonoBehaviour, IGame
 {
     public GameObject playerPrefab;
@@ -13,7 +13,7 @@ public class Game_SpaceInvaders : MonoBehaviour, IGame
     public GameObject player;
     public Transform[] enemySpawns;
     public Transform[] shieldSpawns;
-
+    public Transform playerSpawnPoint;
     public int rows = 3;
     public int columns = 6;
     public float enemyMoveSpeed = 1f;
@@ -30,7 +30,38 @@ public class Game_SpaceInvaders : MonoBehaviour, IGame
     public GameObject winScreen { get => _winScreen; set => _winScreen = value; }
     public GameObject loseScreen { get => _loseScreen; set => _loseScreen = value; }
     public bool isGameStarted { get => _isGameStarted; set => _isGameStarted = value; }
-    public int ticketReward { get => _ticketReward; set => _ticketReward = value; }
+    public int ticketReward
+    {
+        get => _ticketReward;
+        set
+        {
+            _ticketReward = value;
+            if (ticketRewardText != null)
+            {
+                ticketRewardText.text = $"Tickets +{_ticketReward}";
+            }
+        }
+    }
+
+    [SerializeField] private TextMeshPro _ticketRewardText;
+    public TextMeshPro ticketRewardText
+    {
+        get => _ticketRewardText;
+        set => _ticketRewardText = value;
+    }
+    [SerializeField] private AudioSource _audioSource;
+    [SerializeField] private List<AudioClip> _gameSounds = new List<AudioClip>();
+
+    public AudioSource audioSource { get => _audioSource; set => _audioSource = value; }
+    public List<AudioClip> gameSounds { get => _gameSounds; set => _gameSounds = value; }
+
+    public void PlaySound(int index)
+    {
+        if (index >= 0 && index < gameSounds.Count && audioSource != null)
+        {
+            audioSource.PlayOneShot(gameSounds[index]);
+        }
+    }
 
     public List<GameObject> enemies = new();
     private float direction = 1f;
@@ -41,22 +72,21 @@ public class Game_SpaceInvaders : MonoBehaviour, IGame
 
     public void StartGame()
     {
+        ticketReward = ticketReward;
         isGameStarted = true;
         noGameScreen.SetActive(false);
         winScreen.SetActive(false);
         loseScreen.SetActive(false);
 
-
-
         SpawnEnemies();
         SpawnShields();
     }
+
 
     public void StopGame()
     {
         isGameStarted = false;
 
-        if (player) Destroy(player);
         foreach (var enemy in enemies) Destroy(enemy);
         enemies.Clear();
 
@@ -72,12 +102,17 @@ public class Game_SpaceInvaders : MonoBehaviour, IGame
 
     public void WinGame()
     {
+        FindObjectOfType<TicketManager>().currentTickets += ticketReward; // Añadir tickets al jugador
+
+        PlaySound(2);// Sonido de victoria
         isGameStarted = false;
         winScreen.SetActive(true);
     }
 
     public void LoseGame()
     {
+
+        PlaySound(3); // Sonido de derrota
         isGameStarted = false;
         loseScreen.SetActive(true);
     }
@@ -127,6 +162,7 @@ public class Game_SpaceInvaders : MonoBehaviour, IGame
 
                     if (enemy.transform.position.y < -3f)
                     {
+
                         LoseGame();
                     }
                 }
@@ -146,8 +182,9 @@ public class Game_SpaceInvaders : MonoBehaviour, IGame
             if (validEnemies.Count > 0)
             {
                 GameObject shooter = validEnemies[Random.Range(0, validEnemies.Count)];
-                Vector3 spawnPos = shooter.transform.position + Vector3.down * 0.5f;
+                Vector3 spawnPos = shooter.transform.position;
                 Instantiate(enemyBulletPrefab, spawnPos, Quaternion.identity);
+                PlaySound(1); // Sonido de disparo enemigo
             }
         }
     }
@@ -166,6 +203,7 @@ public class Game_SpaceInvaders : MonoBehaviour, IGame
                 {
                     Vector3 position = basePoint.position + new Vector3(col * spacingX, -row * spacingY, 0f);
                     GameObject enemy = Instantiate(enemyPrefab, position, Quaternion.identity);
+                    enemy.GetComponent<Enemy_SpaceInvader>().gameManager = this;
                     enemies.Add(enemy);
                 }
             }
@@ -178,6 +216,11 @@ public class Game_SpaceInvaders : MonoBehaviour, IGame
         {
             Instantiate(shieldBlockPrefab, pos.position, Quaternion.identity);
         }
+    }
+
+    public void PlayerHit()
+    {
+        LoseGame();
     }
 
 }

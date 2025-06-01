@@ -5,6 +5,7 @@ using UnityEngine.SceneManagement;
 [RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
 {
+        public Animator anim;
     public float bobFrequency = 1.5f;
     public float bobAmplitude = 0.05f;
     private float bobTimer = 0f;
@@ -30,10 +31,17 @@ public class PlayerController : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
     }
 
+    void FixedUpdate()
+    {
+                anim.SetFloat("Speed", controller.velocity.magnitude);
+
+    }
+
     void Update()
     {
 
-        if (Input.GetKeyDown(KeyCode.V))
+
+        if (Input.GetKeyDown(KeyCode.I))
         {
             RestartScene();
         }
@@ -75,25 +83,8 @@ public class PlayerController : MonoBehaviour
 
         controller.Move(move * moveSpeed * Time.deltaTime);
 
-        ApplyHeadBob(moveX, moveZ);
     }
 
-    void ApplyHeadBob(float moveX, float moveZ)
-    {
-        if (controller.isGrounded && (moveX != 0 || moveZ != 0))
-        {
-            bobTimer += Time.deltaTime * bobFrequency;
-            float bobOffset = Mathf.Sin(bobTimer) * bobAmplitude;
-            cameraTransform.localPosition = initialCameraPos + new Vector3(0, bobOffset, 0);
-        }
-        else
-        {
-            cameraTransform.localPosition = Vector3.Lerp(cameraTransform.localPosition, initialCameraPos, Time.deltaTime * 5f);
-            bobTimer = 0f;
-        }
-    }
-
-    // ✅ Congela al jugador
     // Congela al jugador y orienta la cámara hacia un punto dado
     public void FreezePlayer(Transform lookPosition = null)
     {
@@ -110,8 +101,6 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-
-    // ✅ Lo descongela
     public void UnfreezePlayer()
     {
         isFrozen = false;

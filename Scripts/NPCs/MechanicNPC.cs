@@ -4,17 +4,19 @@ using UnityEngine.AI;
 [RequireComponent(typeof(NavMeshAgent))]
 public class MechanicNPC : MonoBehaviour
 {
-    public float searchRadius = 15f;         // Distancia máxima para empezar a seguir las máquinas rotas
-    public float stopDistance = 3f;          // Distancia mínima a mantener de la máquina
-    public float wanderRadius = 10f;         // Radio para deambular
-    public float wanderTimer = 5f;           // Tiempo para deambular antes de elegir un nuevo destino
-    public float repairTime = 5f;            // Tiempo que el NPC tarda en reparar la máquina (en segundos)
+    public float searchRadius = 15f;
+    public float stopDistance = 3f;
+    public float wanderRadius = 10f;
+    public float wanderTimer = 5f;
+    public float repairTime = 5f;
 
     private NavMeshAgent agent;
     private float timer;
-    private float repairTimer;               // Temporizador para la reparación
-    private GameObject[] arcadeMachines;     // Lista de las máquinas de arcade en la escena
-    private bool isRepairing = false;        // Indica si el NPC está reparando una máquina
+    private float repairTimer;
+    private GameObject[] arcadeMachines;
+    public bool isRepairing = false;
+
+    public Animator animator;    // Referencia al Animator
 
     void Start()
     {
@@ -22,48 +24,50 @@ public class MechanicNPC : MonoBehaviour
         timer = wanderTimer;
         repairTimer = repairTime;
 
-        // Buscar todas las máquinas de arcade en la escena con el tag "Arcade"
         arcadeMachines = GameObject.FindGameObjectsWithTag("ArcadeMachine");
-    }
 
+        //animator = GetComponent<Animator>(); // Asumiendo el Animator está en el mismo GameObject
+        if (animator == null)
+        {
+            Debug.LogWarning("Animator no encontrado en MechanicNPC.");
+        }
+    }
     void Update()
     {
         GameObject closestMachine = GetClosestBrokenMachine();
-        
+
         if (closestMachine != null)
         {
-            // Si encontramos una máquina rota, nos dirigimos hacia ella
             float distanceToMachine = Vector3.Distance(transform.position, closestMachine.transform.position);
             if (distanceToMachine > stopDistance)
             {
                 agent.SetDestination(closestMachine.transform.position);
-                isRepairing = false;  // Si estamos moviéndonos, no estamos reparando
             }
             else
             {
-                // Comenzamos a reparar si estamos cerca de la máquina
+                // Ya está cerca
                 if (!isRepairing)
                 {
                     Debug.Log("Comenzando la reparación de la máquina...");
                     isRepairing = true;
                     repairTimer = repairTime;
+                    SetIsFix(true); // Activar animación de reparación al comenzar
                 }
 
-                // Si estamos reparando, contamos el tiempo
                 if (isRepairing)
                 {
                     repairTimer -= Time.deltaTime;
-
-                    // Si hemos terminado de reparar
                     if (repairTimer <= 0f)
                     {
                         ArcadeMachine arcade = closestMachine.GetComponent<ArcadeMachine>();
                         if (arcade != null && arcade.currentState == ArcadeMachine.ArcadeState.Broken)
                         {
-                            arcade.RepairMachine();  // Reparar la máquina
+                            arcade.RepairMachine();
                             Debug.Log("La máquina ha sido reparada.");
                         }
-                        isRepairing = false;  // Terminamos de reparar la máquina
+
+                        isRepairing = false;
+                        
                     }
                 }
             }
@@ -78,10 +82,24 @@ public class MechanicNPC : MonoBehaviour
                 agent.SetDestination(newPos);
                 timer = 0;
             }
+
+            isRepairing = false;
+        }
+
+        animator.SetBool("isFix", isRepairing);
+        animator.SetFloat("Speed", agent.velocity.magnitude);
+    }
+
+
+
+    void SetIsFix(bool value)
+    {
+        if (animator != null)
+        {
+            animator.SetBool("isFix", value);
         }
     }
 
-    // Método para encontrar la máquina rota más cercana
     GameObject GetClosestBrokenMachine()
     {
         GameObject closest = null;
@@ -104,7 +122,6 @@ public class MechanicNPC : MonoBehaviour
         return closest;
     }
 
-    // Método para generar un punto aleatorio dentro de un radio
     Vector3 RandomNavSphere(Vector3 origin, float dist)
     {
         Vector3 randDirection = Random.insideUnitSphere * dist;

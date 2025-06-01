@@ -2,70 +2,76 @@ using UnityEngine;
 
 public class ArcadeMachine : MonoBehaviour, IInteractable
 {
-    public enum ArcadeState
-    {
-        Ready,
-        Broken
-    }
-    private IGame game; // Referencia al script del minijuego
-    public GameObject gameManager; // Referencia al script del minijuego
-    public ArcadeState currentState = ArcadeState.Ready; // El estado inicial de la máquina es "Ready"
-    public float energyCost = 10f;  // Costo de energía para jugar
-    public int coinsCost = 1;    // Costo de monedas para jugar
-    public Transform minigameCameraPosition; // Posición donde queremos mover la cámara durante el minijuego
-    public Transform playerController; // Referencia a la cámara del jugador
-    private Vector3 originalPosition; // Posición original de la cámara
+    public enum ArcadeState { Ready, Broken }
+    private IGame game;
+    public GameObject gameManager;
+    public ArcadeState currentState = ArcadeState.Ready;
+    public float energyCost = 10f;
+    public int coinsCost = 1;
+    public Transform minigameCameraPosition;
+    public Transform playerController;
+    private Vector3 originalPosition;
     private Camera cam;
     private float regularFov;
     public float gameFov = 60.0f;
 
-    // Materiales para indicar el estado de la máquina
-    public Material readyMaterial;  // Material para cuando está lista
-    public Material brokenMaterial; // Material para cuando está rota
-    public MeshRenderer screenRenderer; // Para cambiar el material de la máquina
+    public Material readyMaterial;
+    public Material brokenMaterial;
+    public MeshRenderer screenRenderer;
+
+    [TextArea(3, 6)]
+    public string instrucciones;
+
+    public GameManager gameManagerScript;
+
+    private bool instruccionesVisible = false;
+    private bool isInteracting = false;  // NUEVO: indica si estás jugando/interactuando
 
     void Start()
     {
-        // Inicializamos la cámara
         cam = Camera.main;
         regularFov = cam.fieldOfView;
-        game = gameManager.GetComponent<IGame>(); // Obtenemos el script del minijuego
-        // Obtener el componente Renderer para cambiar el material
-        Transform modelTransform = transform.Find("Screen");
-        // if (modelTransform != null)
-        // {
-        //     screenRenderer = modelTransform.GetComponent<MeshRenderer>();
-        // }
-        // else
-        // {
-        //     Debug.LogWarning("No se encontró un hijo llamado 'Model'.");
-        // }
-
-        // // Inicializamos el material de la máquina como listo
-        // screenRenderer.material = readyMaterial;
+        game = gameManager.GetComponent<IGame>();
+        //gameManagerScript = gameManager.GetComponent<GameManager>();
     }
 
+    void Update()
+    {
+        if (!isInteracting) return;  // Solo permito toggle instrucciones si está interactuando
+
+        if (Input.GetKeyDown(KeyCode.H))
+        {
+            Debug.Log("Toggle instrucciones");
+            instruccionesVisible = !instruccionesVisible;
+            if (gameManagerScript != null)
+            {
+                gameManagerScript.MostrarOcultarInstrucciones(instrucciones, instruccionesVisible);
+            }
+        }
+    }
 
     public void Interact()
     {
-        PlayerEnergy playerEnergy = FindObjectOfType<PlayerEnergy>();
+        PlayerEnergyManager playerEnergy = FindObjectOfType<PlayerEnergyManager>();
         TicketManager ticketManager = FindObjectOfType<TicketManager>();
 
-        // Si la máquina está en estado "Ready" y el jugador tiene suficiente energía
         if (currentState == ArcadeState.Ready)
         {
             if (playerEnergy.currentEnergy >= energyCost && ticketManager.currentCoins >= coinsCost)
             {
-                // Gastar energía y monedas
-                playerEnergy.currentEnergy -= energyCost; // Gastar energía
+                playerEnergy.currentEnergy -= energyCost;
                 ticketManager.SpendCoins(coinsCost);
 
                 Debug.Log("Jugando en la máquina de arcade...");
 
-                // Congelar al jugador y mover la cámara a la posición del minijuego
-            
+                originalPosition = playerController.transform.position;
                 FindObjectOfType<PlayerController>().FreezePlayer(minigameCameraPosition);
-                ActivateMinigame();  // Activamos el minijuego de ping pong
+                ActivateMinigame();
+
+                isInteracting = true;  // MARCO que ya está interactuando
+                instruccionesVisible = false; // Reinicio el estado para instrucciones al empezar a jugar
+                if (gameManagerScript != null)
+                    gameManagerScript.MostrarOcultarInstrucciones("", false); // Oculto instrucciones si estaban abiertas
             }
             else
             {
@@ -82,46 +88,50 @@ public class ArcadeMachine : MonoBehaviour, IInteractable
     {
         DeactivateMinigame();
         FindObjectOfType<PlayerController>().UnfreezePlayer();
+
+        isInteracting = false; // Ya no está interactuando
+        instruccionesVisible = false;
+        if (gameManagerScript != null)
+            gameManagerScript.MostrarOcultarInstrucciones("", false); // Aseguro ocultar instrucciones al salir
     }
 
-    // Activar el minijuego de ping pong
     public void ActivateMinigame()
     {
         if (minigameCameraPosition != null)
         {
-            game.StartGame(); // Iniciar el minijuego
+            Debug.Log("Original position guardada: " + originalPosition);
+
+            game.StartGame();
             cam.fieldOfView = gameFov;
-            cam.transform.rotation = minigameCameraPosition.rotation; // Rotar la cámara a la posición del minijuego
-            originalPosition = playerController.transform.position;
-            playerController.transform.position = new Vector3(minigameCameraPosition.position.x, minigameCameraPosition.position.y-0.35f, minigameCameraPosition.position.z); // Mover la cámara a la posición del minijuego
+            cam.transform.rotation = minigameCameraPosition.rotation;
+            playerController.transform.position = new Vector3(minigameCameraPosition.position.x, minigameCameraPosition.position.y - 0.35f, minigameCameraPosition.position.z);
         }
     }
 
     public void DeactivateMinigame()
     {
-        game.StopGame(); // Detener el minijuego
+        Debug.Log("Volviendo a posición original: " + originalPosition);
+        game.StopGame();
         cam.fieldOfView = regularFov;
         playerController.transform.position = originalPosition;
     }
 
-    // Método para dañar la máquina y ponerla en estado "Broken"
     public void DamageMachine()
     {
         if (currentState == ArcadeState.Ready)
         {
             currentState = ArcadeState.Broken;
-            screenRenderer.material = brokenMaterial;  // Cambiar el material a roto
+            screenRenderer.material = brokenMaterial;
             Debug.Log("La máquina está rota.");
         }
     }
 
-    // Para restaurar la máquina a su estado inicial
     public void RepairMachine()
     {
         if (currentState == ArcadeState.Broken)
         {
             currentState = ArcadeState.Ready;
-            screenRenderer.material = readyMaterial;  // Restaurar el material original
+            screenRenderer.material = readyMaterial;
             Debug.Log("La máquina ha sido reparada y está lista para usar.");
         }
     }

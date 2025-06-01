@@ -1,5 +1,6 @@
+using System.Collections.Generic;
 using UnityEngine;
-
+using TMPro;
 public class Game_BlockBreaker : MonoBehaviour, IGame
 {
     public Rigidbody2D ballRb;
@@ -16,17 +17,51 @@ public class Game_BlockBreaker : MonoBehaviour, IGame
     public float bumperRightLimit;  // Límite derecho del bumper
     private Vector2 ballRblastVelocity;
 
-[SerializeField] private GameObject _noGameScreen;
-[SerializeField] private GameObject _winScreen;
-[SerializeField] private GameObject _loseScreen;
-[SerializeField] private bool _isGameStarted;
-[SerializeField] private int _ticketReward;
+    [SerializeField] private GameObject _noGameScreen;
+    [SerializeField] private GameObject _winScreen;
+    [SerializeField] private GameObject _loseScreen;
+    [SerializeField] private bool _isGameStarted;
+    [SerializeField] private int _ticketReward;
 
-public GameObject noGameScreen { get => _noGameScreen; set => _noGameScreen = value; }
-public GameObject winScreen    { get => _winScreen;    set => _winScreen = value; }
-public GameObject loseScreen   { get => _loseScreen;   set => _loseScreen = value; }
-public bool isGameStarted      { get => _isGameStarted; set => _isGameStarted = value; }
-public int ticketReward        { get => _ticketReward; set => _ticketReward = value; }
+    public GameObject noGameScreen { get => _noGameScreen; set => _noGameScreen = value; }
+    public GameObject winScreen { get => _winScreen; set => _winScreen = value; }
+    public GameObject loseScreen { get => _loseScreen; set => _loseScreen = value; }
+    public bool isGameStarted { get => _isGameStarted; set => _isGameStarted = value; }
+
+    public int ticketReward
+    {
+        get => _ticketReward;
+        set
+        {
+            _ticketReward = value;
+            if (ticketRewardText != null)
+            {
+                ticketRewardText.text = $"Tickets +{_ticketReward}";
+            }
+        }
+    }
+
+    [SerializeField] private TextMeshPro  _ticketRewardText;
+    public TextMeshPro  ticketRewardText
+    {
+        get => _ticketRewardText;
+        set => _ticketRewardText = value;
+    }
+
+
+    [SerializeField] private AudioSource _audioSource;
+    [SerializeField] private List<AudioClip> _gameSounds = new List<AudioClip>();
+
+    public AudioSource audioSource { get => _audioSource; set => _audioSource = value; }
+    public List<AudioClip> gameSounds { get => _gameSounds; set => _gameSounds = value; }
+
+    public void PlaySound(int index)
+    {
+        if (index >= 0 && index < gameSounds.Count && audioSource != null)
+        {
+            audioSource.PlayOneShot(gameSounds[index]);
+        }
+    }
 
 
     void Start()
@@ -34,6 +69,7 @@ public int ticketReward        { get => _ticketReward; set => _ticketReward = va
         blocks = GameObject.FindGameObjectsWithTag("BlockBreaker_Block"); // Encontrar todos los bloques en la escena
         InitializeScreens();
         bumperInitialX = bumperTransform.localPosition.x;
+        ticketReward = ticketReward;
     }
 
     void Update()
@@ -42,7 +78,7 @@ public int ticketReward        { get => _ticketReward; set => _ticketReward = va
         {
             ResetBall(); // Reiniciar la pelota si el juego no ha comenzado
         }
-        
+
         // Si se presiona la tecla R, reiniciamos la pelota
         if (Input.GetKeyDown(KeyCode.R))
             ResetBall();
@@ -91,11 +127,16 @@ public int ticketReward        { get => _ticketReward; set => _ticketReward = va
     public void GetPoint()
     {
         blocksDestroyed++;
-
+        PlaySound(0);
         if (blocksDestroyed >= blocks.Length)
         {
             WinGame();
         }
+    }
+    public void GetHit()
+    {
+        PlaySound(1);
+
     }
 
     // Método para mover el bumper de izquierda a derecha
@@ -149,6 +190,7 @@ public int ticketReward        { get => _ticketReward; set => _ticketReward = va
         FindObjectOfType<TicketManager>().currentTickets += ticketReward; // Añadir tickets al jugador
         isGameStarted = false;
         winScreen.SetActive(true);
+        PlaySound(2); // Sonido de victoria
     }
 
 
@@ -157,5 +199,7 @@ public int ticketReward        { get => _ticketReward; set => _ticketReward = va
     {
         isGameStarted = false; // Detener el juego
         loseScreen.SetActive(true); // Mostrar pantalla de "Perder"
+        PlaySound(3);// Sonido de derrota
     }
+
 }

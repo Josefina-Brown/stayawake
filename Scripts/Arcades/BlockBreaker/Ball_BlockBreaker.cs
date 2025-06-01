@@ -31,6 +31,11 @@ public class Ball_BlockBreaker : MonoBehaviour
             DestroyBlock(collision.gameObject);
         }
 
+        if (collision.collider.CompareTag("BlockBreaker_Bumper"))
+        {
+           gameManager.GetHit();
+        }
+
         // Vector2 surfaceNormal = collision.contacts[0].normal;
         // ballRb.linearVelocity = Vector2.Reflect(ballRblastVelocity, surfaceNormal);
 

@@ -2,13 +2,14 @@ using UnityEngine;
 
 public class InteractionSystem : MonoBehaviour
 {
+    public Animator anim;
     public KeyCode interactKey = KeyCode.E;
     private IInteractable currentInteractable;
     private bool isInteracting = false;
 
     void Start()
     {
-                //Application.targetFrameRate = 30;
+        //Application.targetFrameRate = 30;
 
     }
 
@@ -20,11 +21,14 @@ public class InteractionSystem : MonoBehaviour
             {
                 currentInteractable.StopInteraction();
                 isInteracting = false;
+                anim.enabled = true;
             }
             else
             {
                 currentInteractable.Interact();
                 isInteracting = true;
+                anim.enabled = false;
+
             }
         }
     }
@@ -45,7 +49,7 @@ public class InteractionSystem : MonoBehaviour
         {
             if (isInteracting)
             {
-                interactable.StopInteraction(); 
+                interactable.StopInteraction();
                 isInteracting = false;
             }
             currentInteractable = null;

@@ -5,15 +5,15 @@ using TMPro;
 public class PlayerUI : MonoBehaviour
 {
     public Slider energyBar;
-    public TMP_Text moneyText;
-    public TMP_Text ticketsText;
+    public TextMeshProUGUI moneyText;
+    public TextMeshProUGUI ticketsText;
 
-    private PlayerEnergy playerEnergy;
+    private PlayerEnergyManager playerEnergy;
     private TicketManager playerWallet;
 
     void Start()
     {
-        playerEnergy = FindObjectOfType<PlayerEnergy>();
+        playerEnergy = FindObjectOfType<PlayerEnergyManager>();
         playerWallet = FindObjectOfType<TicketManager>();
 
         UpdateUI(); // Inicializa con los valores actuales
@@ -34,8 +34,8 @@ public class PlayerUI : MonoBehaviour
 
         if (playerWallet != null)
         {
-            moneyText.text = "◘ " + playerWallet.currentCoins.ToString("F0");
-            ticketsText.text = "◘ " + playerWallet.currentTickets.ToString("F0");
+            moneyText.text = playerWallet.currentCoins.ToString();
+            ticketsText.text = playerWallet.currentTickets.ToString();
         }
     }
 }

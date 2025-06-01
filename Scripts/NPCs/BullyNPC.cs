@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.Animations;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -19,10 +18,10 @@ using UnityEngine.AI;
     {
         agent = GetComponent<NavMeshAgent>();
         GameObject[] arcades = GameObject.FindGameObjectsWithTag("ArcadeMachine");
-        foreach (GameObject arcade in arcades)
-        {
-            arcadePositions.Add(arcade.transform);
-        }
+        //foreach (GameObject arcade in arcades)
+        //{
+        //    arcadePositions.Add(arcade.transform);
+        //}
 
         if (arcadePositions.Count > 0)
         {

@@ -1,24 +1,13 @@
 using UnityEngine;
 
-[System.Serializable]
-public class VendingItem
-{
-    public string itemName;
-    public int ticketCost;
-    public float energyRestore;
-}
-
-
 public class VendingMachine : MonoBehaviour, IInteractable
 {
-    public VendingItem[] items; // Lista de productos disponibles
-
+    public VendingItemData[] items;
+    public AudioSource audioSource;
     public void Interact()
     {
-        // Mostrar menú (esto lo vamos a implementar con UI)
-        Debug.Log("Tienda abierta. Mostrando menú de productos...");
-        VendingUI vendingUI = FindObjectOfType<VendingUI>();
-        vendingUI.OpenMenu(this);
+        var vendingUI = FindObjectOfType<VendingUI>();
+        vendingUI.OpenMenu(items, BuyItem);
         FindObjectOfType<PlayerController>().FreezePlayer();
     }
 
@@ -26,27 +15,33 @@ public class VendingMachine : MonoBehaviour, IInteractable
     {
         if (index < 0 || index >= items.Length) return;
 
-        VendingItem item = items[index];
-        TicketManager ticketManager = FindObjectOfType<TicketManager>();
-        PlayerEnergy playerEnergy = FindObjectOfType<PlayerEnergy>();
+        var item = items[index];
+        var ticketManager = FindObjectOfType<TicketManager>();
+        var playerEnergy = FindObjectOfType<PlayerEnergyManager>();
 
         if (ticketManager.SpendTickets(item.ticketCost))
         {
-            playerEnergy.RestoreEnergy(item.energyRestore);
+            audioSource.PlayOneShot(item.soundEffect);
+
+            switch (item.type)
+            {
+                case VendingItemType.Food:
+                    playerEnergy.RestoreEnergy(item.valueRestore);
+                    break;
+
+                case VendingItemType.Money:
+                    ticketManager.currentCoins += item.valueRestore;
+                    break;
+            }
+
             FindObjectOfType<PlayerController>().UnfreezePlayer();
-            Debug.Log($"Compraste {item.itemName} (+{item.energyRestore} energía).");
-        }
-        else
-        {
-            Debug.Log("No tenés suficientes tickets para comprar eso.");
         }
     }
 
+
     public void StopInteraction()
     {
-       Debug.Log("Tienda cerrada.");
-        VendingUI vendingUI = FindObjectOfType<VendingUI>();
-       vendingUI.CloseMenu();
-       FindObjectOfType<PlayerController>().UnfreezePlayer();
+        FindObjectOfType<VendingUI>().CloseMenu();
+        FindObjectOfType<PlayerController>().UnfreezePlayer();
     }
 }
